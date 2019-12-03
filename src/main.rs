@@ -104,29 +104,38 @@ from information_schema.columns where table_schema=$1 and table_name=$2",
             let rows = &c.query(&sql, &[])?;
             let row = rows.get(0);
             let n_dist: i64 = row.get(0);
-            println!("  Distinct: {}", n_dist);
+            if n_dist == 0 {
+                println!("  All null");
+            } else {
+                println!("  Distinct: {}", n_dist);
+            }
             n_dist
         };
-        
-        if analyze_min_max && (n_dist > 10 || ! analyze_distinct) {
-            let sql = format!("select min({})::text, max({})::text from {}.{}", column_name, column_name, schema, table);
-            for row in &c.query(&sql, &[])? {
-                let min: Option<String> = row.get(0);
-                let max: Option<String> = row.get(1);
-                println!("       Min: {}", printable(min));
-                println!("       Max: {}", printable(max));
 
-            }
-        }
+        if n_dist == 0 {
+            // all nulls
+        } else {
 
-        if analyze_distinct {
-            let sql = format!("select distinct {}::text, count(*) from {}.{} group by 1 order by 2 desc limit 10", column_name, schema, table);
-            for row in &c.query(&sql, &[])? {
-                let value: Option<String> = row.get(0);
-                let count: i64 = row.get(1);
-                println!("  {:8}  {}", count, printable(value));
+            if analyze_min_max && (n_dist > 10 || ! analyze_distinct) {
+                let sql = format!("select min({})::text, max({})::text from {}.{}", column_name, column_name, schema, table);
+                for row in &c.query(&sql, &[])? {
+                    let min: Option<String> = row.get(0);
+                    let max: Option<String> = row.get(1);
+                    println!("       Min: {}", printable(min));
+                    println!("       Max: {}", printable(max));
+
+                }
             }
 
+            if analyze_distinct {
+                let sql = format!("select distinct {}::text, count(*) from {}.{} group by 1 order by 2 desc limit 10", column_name, schema, table);
+                for row in &c.query(&sql, &[])? {
+                    let value: Option<String> = row.get(0);
+                    let count: i64 = row.get(1);
+                    println!("  {:8}  {}", count, printable(value));
+                }
+
+            }
         }
 
         println!();
