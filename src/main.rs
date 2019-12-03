@@ -1,4 +1,3 @@
-extern crate postgres;
 
 use postgres::{Connection, TlsMode, Error};
 use clap::{Arg, App};
