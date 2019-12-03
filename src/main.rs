@@ -3,12 +3,13 @@ extern crate postgres;
 use postgres::{Connection, TlsMode, Error};
 
 fn printable(c: Option<String>) -> String {
+    let cutoff = 70;
     match c {
         None => "null".to_string(),
         Some(s) => {
             let t = s.trim().replace("\n", "\\n");
-            if t.len() > 48 {
-                let out: String = t.chars().take(48).collect();
+            if t.len() > cutoff {
+                let out: String = t.chars().take(cutoff).collect();
                 out + ".."
             } else {
                 if t == "" {
@@ -33,14 +34,16 @@ fn explore_table(c: &Connection, schema: &str, table: &str) -> Result<(), Error>
 
     for row in &c.query("
 select 
-    column_name, data_type, character_maximum_length, numeric_precision, numeric_precision_radix
-from information_schema.columns where table_schema=$1 and table_name=$2", &[ &schema, &table ])? {
+    column_name, data_type, character_maximum_length, numeric_precision, numeric_precision_radix, ordinal_position
+from information_schema.columns where table_schema=$1 and table_name=$2",
+        &[ &schema, &table ])? {
 
         let column_name: String = row.get(0);
         let data_type: String = row.get(1);
         let character_maximum_length: Option<i32> = row.get(2);
         let numeric_precision: Option<i32> = row.get(3);
         let numeric_precision_radix: Option<i32> = row.get(4);
+        let ordinal_position: i32 = row.get(5);
 
         let mut analyze_min_max = true;
         let mut analyze_distinct = true;
@@ -80,12 +83,24 @@ from information_schema.columns where table_schema=$1 and table_name=$2", &[ &sc
 
         };
 
+        {
+            let sql = format!("select pg_catalog.col_description('{}.{}'::regclass::oid, $1)", schema, table);
+            let rows = &c.query(&sql, &[&ordinal_position])?;
+            let row = rows.get(0);
+            let row_comment: Option<String> = row.get(0);
+            row_comment.map( |comment| {
+                println!("   Comment: {}", comment);
+            });
+        }
+
+
+
         let n_dist = {
             let sql = format!("select count(distinct({})) from {}.{}", column_name, schema, table);
             let rows = &c.query(&sql, &[])?;
             let row = rows.get(0);
             let n_dist: i64 = row.get(0);
-            println!("  Dist: {}", n_dist);
+            println!("  Distinct: {}", n_dist);
             n_dist
         };
         
@@ -94,8 +109,8 @@ from information_schema.columns where table_schema=$1 and table_name=$2", &[ &sc
             for row in &c.query(&sql, &[])? {
                 let min: Option<String> = row.get(0);
                 let max: Option<String> = row.get(1);
-                println!("   Min: {}", printable(min));
-                println!("   Max: {}", printable(max));
+                println!("       Min: {}", printable(min));
+                println!("       Max: {}", printable(max));
 
             }
         }
@@ -105,11 +120,12 @@ from information_schema.columns where table_schema=$1 and table_name=$2", &[ &sc
             for row in &c.query(&sql, &[])? {
                 let value: Option<String> = row.get(0);
                 let count: i64 = row.get(1);
-                println!("  {:5} {}", count, printable(value));
+                println!("  {:8}  {}", count, printable(value));
             }
 
         }
 
+        println!();
     }
 
     Ok(())
