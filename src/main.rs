@@ -1,6 +1,7 @@
 extern crate postgres;
 
 use postgres::{Connection, TlsMode, Error};
+use clap::{Arg, App};
 
 fn printable(c: Option<String>) -> String {
     let cutoff = 70;
@@ -147,7 +148,67 @@ from information_schema.columns where table_schema=$1 and table_name=$2",
 }
 
 fn main() {
-    let conn_str = "postgresql://postgres@127.0.0.1:5432/izraktenis";
+
+
+    let matches = App::new("explore-table-postgres")
+        .author("Einar Lielmanis <einars@spicausis.lv>")
+        .about("Shows extended information about postgres table contents")
+        .arg(Arg::with_name("database")
+             .help("database name to connect to")
+             .index(1)
+             .takes_value(true)
+             .required(true))
+        .arg(Arg::with_name("schema")
+             .help("database schema")
+             .short("s")
+             .long("schema")
+             .takes_value(true)
+             .default_value("public")
+             .required(false))
+        .arg(Arg::with_name("host")
+             .help("database host")
+             .short("h")
+             .long("host")
+             .takes_value(true)
+             .default_value("127.0.0.1")
+             .required(false))
+        .arg(Arg::with_name("username")
+             .help("database user name")
+             .short("u")
+             .long("username")
+             .short("U")
+             .short("user")
+             .default_value("postgres")
+             .takes_value(true)
+             .required(false))
+        .arg(Arg::with_name("password")
+             .help("database password")
+             .short("p")
+             .long("password")
+             .default_value("")
+             .takes_value(true)
+             .required(false))
+        .arg(Arg::with_name("port")
+             .help("database port (default: 5432)")
+             .long("port")
+             .takes_value(true)
+             .default_value("5432")
+             .required(false))
+        .arg(Arg::with_name("table")
+             .help("table name to explore")
+             .takes_value(true)
+             .required(true))
+        .get_matches();
+    println!("{:?}", matches);
+
+    let conn_str = format!("postgresql://{}:{}@{}:{}/{}",
+                           matches.value_of("username").unwrap(),
+                           matches.value_of("password").unwrap(),
+                           matches.value_of("host").unwrap(),
+                           matches.value_of("port").unwrap(),
+                           matches.value_of("database").unwrap(),
+                           );
+
     let conn = Connection::connect(conn_str, TlsMode::None).unwrap();
-    explore_table(&conn, "public", "atradne").unwrap();
+    explore_table(&conn, matches.value_of("schema").unwrap(), matches.value_of("table").unwrap()).unwrap();
 }
