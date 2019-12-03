@@ -199,7 +199,6 @@ fn main() {
              .takes_value(true)
              .required(true))
         .get_matches();
-    println!("{:?}", matches);
 
     let conn_str = format!("postgresql://{}:{}@{}:{}/{}",
                            matches.value_of("username").unwrap(),
