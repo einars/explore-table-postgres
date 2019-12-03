@@ -36,7 +36,7 @@ fn explore_table(c: &Connection, schema: &str, table: &str) -> Result<(), Error>
     for row in &c.query("
 select 
     column_name, data_type, character_maximum_length, numeric_precision, numeric_precision_radix, ordinal_position
-from information_schema.columns where table_schema=$1 and table_name=$2",
+from information_schema.columns where lower(table_schema)=lower($1) and lower(table_name)=lower($2)",
         &[ &schema, &table ])? {
 
         let column_name: String = row.get(0);
