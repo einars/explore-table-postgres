@@ -189,7 +189,7 @@ fn main() {
              .takes_value(true)
              .required(false))
         .arg(Arg::with_name("port")
-             .help("database port (default: 5432)")
+             .help("database port")
              .long("port")
              .takes_value(true)
              .default_value("5432")

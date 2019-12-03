@@ -8,10 +8,6 @@ Use if you're looking at a yet unfamiliar database and want to know what's actua
 For each column in the specified table the script shows its most frequently used values
 as well as the smallest and largest value.
 
-Usage:
-
-./explore-table-postgres dbname tablename
-
 ```
 USAGE:
     explore-table-postgres [OPTIONS] <database> <table>
@@ -23,7 +19,7 @@ FLAGS:
 OPTIONS:
     -h, --host <host>            database host [default: 127.0.0.1]
     -p, --password <password>    database password [default: ]
-        --port <port>            database port (default: 5432) [default: 5432]
+        --port <port>            database port [default: 5432]
     -s, --schema <schema>        database schema [default: public]
     -u, --username <username>    database user name [default: postgres]
 
