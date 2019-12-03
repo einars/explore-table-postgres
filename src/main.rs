@@ -67,8 +67,12 @@ from information_schema.columns where table_schema=$1 and table_name=$2",
             },
             "bigint" =>
                 println!("{} {}", column_name, data_type),
-            "character varying" =>
-                println!("{} text({})", column_name, character_maximum_length.unwrap()),
+            "character varying" => {
+                match character_maximum_length {
+                    None => println!("{} text", column_name),
+                    Some(n) => println!("{} text({})", column_name, n),
+                }
+            },
             "integer" =>
                 println!("{} integer({}, {})", column_name, numeric_precision.unwrap(), numeric_precision_radix.unwrap()),
             "numeric" =>
