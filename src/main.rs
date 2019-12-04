@@ -35,7 +35,7 @@ fn explore_table(c: &Connection, schema: &str, table: &str) -> Result<(), Error>
     for row in &c.query("
 select 
     column_name, data_type, character_maximum_length, numeric_precision, numeric_scale, ordinal_position, udt_name
-from information_schema.columns where lower(table_schema)=lower($1) and lower(table_name)=lower($2)",
+from information_schema.columns where lower(table_schema)=lower($1) and lower(table_name)=lower($2) order by ordinal_position",
         &[ &schema, &table ])? {
 
         let column_name: String = row.get(0);
@@ -131,7 +131,7 @@ from information_schema.columns where lower(table_schema)=lower($1) and lower(ta
             }
 
             if analyze_distinct {
-                let sql = format!("select distinct {}::text, count(*) from {}.{} group by 1 order by 2 desc limit 10", column_name, schema, table);
+                let sql = format!("select v::text, c from (select distinct {} as v, count(*) as c from {}.{} group by 1 order by 2 desc, 1 desc limit 10) as preview", column_name, schema, table);
                 for row in &c.query(&sql, &[])? {
                     let value: Option<String> = row.get(0);
                     let count: i64 = row.get(1);
