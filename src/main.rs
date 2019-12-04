@@ -77,7 +77,7 @@ from information_schema.columns where lower(table_schema)=lower($1) and lower(ta
                 }
             },
             "integer" =>
-                println!("{} integer({}, {})", column_name, numeric_precision.unwrap(), numeric_scale.unwrap()),
+                println!("{} {}", column_name, udt_name.unwrap_or(data_type)),
             "numeric" =>
                 println!("{} numeric({}, {})", column_name, numeric_precision.unwrap(), numeric_scale.unwrap()),
             "USER-DEFINED" => {
