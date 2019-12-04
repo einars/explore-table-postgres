@@ -34,7 +34,7 @@ fn explore_table(c: &Connection, schema: &str, table: &str) -> Result<(), Error>
 
     for row in &c.query("
 select 
-    column_name, data_type, character_maximum_length, numeric_precision, numeric_scale, ordinal_position
+    column_name, data_type, character_maximum_length, numeric_precision, numeric_scale, ordinal_position, udt_name
 from information_schema.columns where lower(table_schema)=lower($1) and lower(table_name)=lower($2)",
         &[ &schema, &table ])? {
 
@@ -44,6 +44,7 @@ from information_schema.columns where lower(table_schema)=lower($1) and lower(ta
         let numeric_precision: Option<i32> = row.get(3);
         let numeric_scale: Option<i32> = row.get(4);
         let ordinal_position: i32 = row.get(5);
+        let udt_name: Option<String> = row.get(6);
 
         let mut analyze_min_max = true;
         let mut analyze_distinct = true;
@@ -82,7 +83,7 @@ from information_schema.columns where lower(table_schema)=lower($1) and lower(ta
             "USER-DEFINED" => {
                 analyze_min_max = false;
                 analyze_distinct = false;
-                println!("{} user-defined", column_name);
+                println!("{} user-defined / {}", column_name, udt_name.unwrap_or("???".to_string()));
             }
             _ =>
                 println!("{} {} {:?} {:?} {:?}", column_name, data_type, character_maximum_length, numeric_precision, numeric_scale),
