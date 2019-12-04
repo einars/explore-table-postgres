@@ -34,7 +34,7 @@ fn explore_table(c: &Connection, schema: &str, table: &str) -> Result<(), Error>
 
     for row in &c.query("
 select 
-    column_name, data_type, character_maximum_length, numeric_precision, numeric_precision_radix, ordinal_position
+    column_name, data_type, character_maximum_length, numeric_precision, numeric_scale, ordinal_position
 from information_schema.columns where lower(table_schema)=lower($1) and lower(table_name)=lower($2)",
         &[ &schema, &table ])? {
 
@@ -42,7 +42,7 @@ from information_schema.columns where lower(table_schema)=lower($1) and lower(ta
         let data_type: String = row.get(1);
         let character_maximum_length: Option<i32> = row.get(2);
         let numeric_precision: Option<i32> = row.get(3);
-        let numeric_precision_radix: Option<i32> = row.get(4);
+        let numeric_scale: Option<i32> = row.get(4);
         let ordinal_position: i32 = row.get(5);
 
         let mut analyze_min_max = true;
@@ -67,23 +67,25 @@ from information_schema.columns where lower(table_schema)=lower($1) and lower(ta
             },
             "bigint" =>
                 println!("{} {}", column_name, data_type),
+            "text" =>
+                println!("{} {}", column_name, data_type),
             "character varying" => {
                 match character_maximum_length {
-                    None => println!("{} text", column_name),
-                    Some(n) => println!("{} text({})", column_name, n),
+                    None => println!("{} varchar", column_name),
+                    Some(n) => println!("{} varchar({})", column_name, n),
                 }
             },
             "integer" =>
-                println!("{} integer({}, {})", column_name, numeric_precision.unwrap(), numeric_precision_radix.unwrap()),
+                println!("{} integer({}, {})", column_name, numeric_precision.unwrap(), numeric_scale.unwrap()),
             "numeric" =>
-                println!("{} numeric({}, {})", column_name, numeric_precision.unwrap(), numeric_precision_radix.unwrap()),
+                println!("{} numeric({}, {})", column_name, numeric_precision.unwrap(), numeric_scale.unwrap()),
             "USER-DEFINED" => {
                 analyze_min_max = false;
                 analyze_distinct = false;
                 println!("{} user-defined", column_name);
             }
             _ =>
-                println!("{} {} {:?} {:?} {:?}", column_name, data_type, character_maximum_length, numeric_precision, numeric_precision_radix),
+                println!("{} {} {:?} {:?} {:?}", column_name, data_type, character_maximum_length, numeric_precision, numeric_scale),
 
         };
 
